@@ -170,11 +170,11 @@ def run_pipeline(csv_path="./inputs/ventas_motores.csv"):
 
     # Return para evaluación       
     return {
-        "df": df             if df       != None else None,
-        "X": X               if X        != None else None,
-        "y": y               if y        != None else None,
-        "pipeline": pipeline if pipeline != None else None,
-        "y_pred": y_pred     if y_pred   != None else None,
+        "df": df             if df       is not None else None,
+        "X": X               if X        is not None else None,
+        "y": y               if y        is not None else None,
+        "pipeline": pipeline if pipeline is not None else None,
+        "y_pred": y_pred     if y_pred   is not None else None,
     }
 
 
