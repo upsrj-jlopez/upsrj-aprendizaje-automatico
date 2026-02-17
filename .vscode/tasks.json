@@ -4,12 +4,13 @@
         {
             "label": "Build and Run",
             "type": "shell",
-            "command": "python",
+            "command": "${workspaceFolder}/venv/bin/python",
             "args": [
-                "src/main.py"
+                "-m",
+                "src.main"
             ],
             "options": {
-                "cwd": "${workspaceFolder}/src"
+                "cwd": "${workspaceFolder}"
             },
             "group": {
                 "kind": "build",
@@ -20,9 +21,48 @@
         {
             "label": "Run Tests",
             "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python",
+            "args": [
+                "-m",
+                "test.test_main"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Create Virtual Environment",
+            "type": "shell",
             "command": "python",
             "args": [
-                "test/test_main.py"
+                "-m",
+                "venv",
+                "venv"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Install Requirements",
+            "type": "shell",
+            "command": "${workspaceFolder}/venv/bin/python",
+            "args": [
+                "-m",
+                "pip",
+                "install",
+                "-r",
+                "requirements.txt"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

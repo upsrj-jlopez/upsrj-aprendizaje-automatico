@@ -1,6 +1,6 @@
 import sys
 import logging
-from config import get_log_file
+from src.config import get_log_file
 
 def set_logger(file_path: str = 'app.log', level: str = logging.DEBUG,
                format: str = "%(asctime)s [%(levelname)s] %(message)s") -> None:

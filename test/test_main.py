@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-import subprocess
 import os
 import sys
-import re
+import types
+import pandas as pd
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.linear_model import LinearRegression
 
 # ANSI escape codes for colors
 GREEN = "\033[92m"
@@ -11,68 +15,95 @@ BLUE  = "\033[34m"
 RESET = "\033[0m"
 
 # Paths
-SRC_DIR = "src"
-FILENAME = "main"
+SRC_DIR   = "src"
+FILENAME  = "main"
 SCRIPT    = os.path.join(SRC_DIR, f"{FILENAME}.py")
-LOG_PATH  = os.path.join("build", "log", f"{FILENAME}.log")
 
+TEST_DIR  = "test"
 
-def run_cmd(cmd, cwd=None, input_data=None):
-    """Run a shell command and return (exit_code, stdout, stderr)."""
-    try:
-        result = subprocess.run(
-            cmd,
-            cwd=cwd,
-            shell=True,
-            input=input_data,
-            capture_output=True,
-            text=True
-        )
-        return result.returncode, result.stdout, result.stderr
-    except Exception as e:
-        return 1, "", str(e)
+BUILD_DIR = "build"
+LOG_DIR   = os.path.join(BUILD_DIR, "log")
+LOG_PATH  = os.path.join(LOG_DIR, f"{FILENAME}.log")
+OUT_DIR   = os.path.join(BUILD_DIR, "out")
+
+def test_src_structure():
+    print(">>> Checking project structure...")
+    assert os.path.isdir(SRC_DIR), f"{RED}Missing src directory{RESET}"
+    assert os.path.isdir(TEST_DIR), f"{RED}Missing test directory{RESET}"
+    print(f"{GREEN}Project structure OK{RESET}")
 
 def test_script_exists():
     print(">>> Checking if Python script exists...")
     assert os.path.isfile(SCRIPT), f"{RED}Script not found at {SCRIPT}{RESET}"
     print(f"{GREEN}Script found: {SCRIPT}{RESET}")
 
-def test_log_exists_and_content():
-    print(">>> Checking if log file exists and has content...")
+def test_log_path_exists():
+    print(">>> Checking if log path exists...")
+    log_dir = os.path.dirname(LOG_PATH)
+    assert os.path.isdir(log_dir), f"{RED}Log directory not found: {log_dir}{RESET}"
+    print(f"{GREEN}Log directory OK{RESET}")
+
+def test_log_no_errors():
+    print(">>> Checking that log file has no [ERROR] entries...")
     assert os.path.isfile(LOG_PATH), f"{RED}Log file not found at {LOG_PATH}{RESET}"
     with open(LOG_PATH, "r") as f:
-        content = f.read().strip()
-    assert content, f"{RED}Log file is empty{RESET}"
-    print(f"{GREEN}Log file OK{RESET}")
-    print(f"{BLUE}Log content:\n{content}{RESET}")
+        content = f.read()
+    assert "[ERROR]" not in content, f"{RED}Log file contains errors:\n{content}{RESET}"
+    print(f"{GREEN}Log file contains no errors{RESET}")
 
-def test_code_functionality(test_input: str = None, iteration: int = 0, expected: str = None):
-    """Black-box test: checks that expected result strings appear in output"""
-    print(f">>> Testing program functionality (black-box) — case {iteration}")
+def test_output_images_exist():
+    print(">>> Checking that output images were generated...")
+    real_vs_predicted = os.path.join(OUT_DIR, "real_vs_predicted.png")
+    residuals = os.path.join(OUT_DIR, "residuals.png")
 
-    code, out, err = run_cmd(f"python3 {SCRIPT}", input_data=f"{test_input}\n")
+    assert os.path.isfile(real_vs_predicted), f"{RED}Missing {real_vs_predicted}{RESET}"
+    assert os.path.isfile(residuals), f"{RED}Missing {residuals}{RESET}"
 
-    if err:
-        print("stderr:", err)
+    print(f"{GREEN}Output images generated successfully{RESET}")
 
-    assert code == 0, f"{RED}Program execution failed{RESET}"
-    assert expected == out, (
-        f"{RED}Unexpected output (case {iteration}):\n"
-        f"Expected to find:\n{expected}\n"
-        f"Got:\n{out}{RESET}"
-    )
 
-    print(f"{GREEN}Case {iteration} OK{RESET}")
+def test_run_pipeline_types():
+    print(">>> Checking run_pipeline function and variable types...")
+
+    import src.main
+
+    try:
+        result = src.main.run_pipeline()
+    except Exception as e:
+        raise AssertionError(f"{RED}run_pipeline failed: {e}{RESET}")
+
+    # Validar que result sea un dict
+    if result is None or not isinstance(result, dict):
+        raise AssertionError(f"{RED}run_pipeline did not return a dict{RESET}")
+
+    # Intentar extraer las claves esperadas
+    try:
+        df = result["df"]
+        X = result["X"]
+        y = result["y"]
+        pipeline = result["pipeline"]
+        y_pred = result["y_pred"]
+    except KeyError as e:
+        raise AssertionError(f"{RED}Missing expected key in result: {e}{RESET}")
+
+    # Validar tipos
+    assert isinstance(df, pd.DataFrame), f"{RED}df is not a DataFrame{RESET}"
+    assert isinstance(X, pd.DataFrame), f"{RED}X is not a DataFrame{RESET}"
+    assert isinstance(y, (pd.Series, np.ndarray)), f"{RED}y is not a Series/ndarray{RESET}"
+    assert isinstance(pipeline, Pipeline), f"{RED}pipeline is not a Pipeline{RESET}"
+    assert isinstance(y_pred, np.ndarray), f"{RED}y_pred is not a numpy array{RESET}"
+
+    print(f"{GREEN}run_pipeline returned expected types{RESET}")
+    print(f"{BLUE}df shape: {df.shape}, X shape: {X.shape}, y length: {len(y)}{RESET}")
+    print(f"{BLUE}Pipeline steps: {pipeline.named_steps.keys()}{RESET}")
+    print(f"{BLUE}y_pred sample: {y_pred[:5]}{RESET}")
 
 if __name__ == "__main__":
     try:
-        testcases = {
-            1: f"Hello World!\n"
-        }
         test_script_exists()
-        test_log_exists_and_content()
-        for i, (id, expected) in enumerate(testcases.items()):
-            test_code_functionality(id, i, expected)
+        test_run_pipeline_types()
+        test_log_no_errors()
+        test_output_images_exist()
         print(f"\n{GREEN}All tests passed{RESET}")
     except AssertionError as e:
         print(f"{RED}Test failed: {e}{RESET}")
