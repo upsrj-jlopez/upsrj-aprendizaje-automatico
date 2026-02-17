@@ -21,18 +21,22 @@ jobs:
         with:
           python-version: "3.x"
 
-      # Step 3: Install dependencies (if any)
-      - name: Install Python dependencies
+      # Step 3: Create and activate venv
+      - name: Create virtual environment
         run: |
+          python -m venv venv
+          source venv/bin/activate
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Step 4: Run Python project
-      - name: Run project with Python
+      # Step 4: Run Python project inside venv
+      - name: Run project with venv
         run: |
-          python src/main.py
+          source venv/bin/activate
+          python -m src.main
 
-      # Step 5: Run Python tests
+      # Step 5: Run Python tests inside venv
       - name: Run autograde tests
         run: |
-          python test/test_main.py
+          source venv/bin/activate
+          python -m test.test_main
